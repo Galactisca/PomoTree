@@ -197,7 +197,7 @@
 .modal-name {
   font-weight: bold;
   font-size: 20px;
-  color: rgb(80, 80, 80);
+  color: rgb(187, 187, 187);
 }
 .modal-close {
   font-size: 20px;
@@ -212,7 +212,7 @@
   background-color: rgb(239, 239, 239);
   border: 1px solid rgb(206, 205, 205);
   border-radius: 8px;
-  padding: 10px 10px;
+  padding: 10px 0;
   width: 100%;
 }
 /* task modal */
@@ -502,7 +502,11 @@
   /* display: none; */
 }
 .task .btn-check{
-  color: rgb(172, 171, 171);
+  color:#238823;
+  font-size: 25px;
+  cursor: pointer;
+}
+.task .btn-check .fa-times-circle{
   color:rgb(217, 85, 80);
   font-size: 25px;
   cursor: pointer;
@@ -535,4 +539,8 @@
 }
 .btn-add .name{
   padding: 0 10px;
+}
+
+.calendar input {
+  display: none;
 }
