@@ -1,8 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs, doc, getDoc, addDoc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-auth.js"
+import { getFirestore, collection, getDocs, doc, getDoc, addDoc, setDoc, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-firestore.js";
+import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-auth.js"
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -23,10 +23,15 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth();
 const db = getFirestore();
-const usersColRef = collection(db, 'users');
-const tasksColRef = collection(db, 'users', 'username1', 'tasks');
 
-// printTasksFromFirebase()
+const $ = document.querySelector.bind(document);
+const $$ = document.querySelectorAll.bind(document);
+const taskModal = $(".task__modal");
+const titleTask = $("#title");
+const dateTask = $("#date");
+const tagsTask = $("#tags");
+const descTask = $("#description");
+
 
 const saveBtn = document.querySelector('.save-btn')
 saveBtn.addEventListener('click', (e) => {
@@ -34,7 +39,7 @@ saveBtn.addEventListener('click', (e) => {
 		deleteTaskFromFirebase(e.target.id)
 	}
 	addTaskToFirebase()
-	taskModal.style.display = "none";
+	$(".task__modal").style.display = "none";
 	printTasksFromFirebase()
 	resetModalTask()
 })
@@ -55,7 +60,7 @@ doneAllBtn.addEventListener('click',function(){
   doneBtns.forEach(doneBtn => {
 		uploadDoneTaskToFirebase(doneBtn.id)
 	})
-	printTasksFromFirebase()
+	printQueriedTasksFromFirebase('isDone', false);
 })
 
 const profileUpdate = document.querySelector('.nav__items .profile')
@@ -72,7 +77,7 @@ document.querySelector('.delete-all').addEventListener('click',function(){
 		console.log(doneBtn.id)
 		deleteTaskFromFirebase(doneBtn.id)
 	})
-	printTasksFromFirebase()
+	printQueriedTasksFromFirebase('isDone', false);
 })
 
 const logoutBtn =document.querySelector('.logout');
@@ -104,7 +109,6 @@ function printTasksFromFirebase() {
 	getDocs(collection(db, 'users', window.sessionStorage.getItem('UID'), 'tasks'))
 	.then(snapshot => {
 		let htmls = snapshot.docs.map((task) => {
-			if (!task.data().isDone){
 				const newElement =  `
 					<div class="task" data-id-task="${task.id}">
 						<div class="btn-check" id=${task.id}">
@@ -121,11 +125,38 @@ function printTasksFromFirebase() {
 					</div>
 					`;
 				return newElement;
-			}
 		})
 		$('.tasks').innerHTML = htmls.join('');
 		addOptionEvent();
 		addDoneEvent()
+	})
+}
+
+function printQueriedTasksFromFirebase(field, value) {
+	$('.tasks').innerHTML = '';
+	getDocs(query(collection(db, 'users', window.sessionStorage.getItem('UID'), 'tasks'), where(field, "==", value)))
+	.then(snapshot => {
+		let htmls = snapshot.docs.map((task) => {
+				const newElement =  `
+					<div class="task" data-id-task="${task.id}">
+						<div class="btn-check" id=${task.id}">
+							<i class="fas fa-check-circle"></i>
+						</div>
+						<div class="name">
+							<div class="title">${task.data().title}</div>
+							<div class="date">${task.data().date}</div>
+							<div class="note">${task.data().description}</div>
+						</div>
+						<div class="btn-option" id="${task.id}">
+							<i class="fas fa-ellipsis-v"></i>
+						</div>
+					</div>
+					`;
+				return newElement;
+		})
+		$('.tasks').innerHTML = htmls.join('');
+		addOptionEvent();
+		addDoneEvent();
 	})
 }
 
@@ -141,8 +172,8 @@ function addOptionEvent() {
           taskEdit = e.currentTarget.parentNode;
         }
 				$('.modal-name').innerHTML = "Edit Task"; 
-        taskModal.style.display = "block";
-        deleteBtn.style.display = "block";
+        $(".task__modal").style.display = "block";
+        $(".task__modal .delete-btn").style.display = "block";
 				// get data
 				const idTask = taskEdit.getAttribute('data-id-task')
 				getDoc(doc(db, 'users', window.sessionStorage.getItem('UID'), 'tasks', idTask))
@@ -152,12 +183,12 @@ function addOptionEvent() {
 					$('#tags').value = snapshot.data().tag;
 					$('#description').value = snapshot.data().description;
 					$('.task__modal .save-btn').id = idTask;
-					deleteBtn.id = idTask;
-					deleteBtn.addEventListener('click', function(){
+					$(".task__modal .delete-btn").id = idTask;
+					$(".task__modal .delete-btn").addEventListener('click', function(){
 						deleteTaskFromFirebase(idTask);
 						// test
 						taskModal.style.display = "none";
-						printTasksFromFirebase()
+						printQueriedTasksFromFirebase('isDone', false);
 					})
 				})
 				.catch(err => console.log(err,"Get data error"))
@@ -181,7 +212,7 @@ function addDoneEvent() {
 				// get data
 				const idTask = taskDone.getAttribute('data-id-task')
 				uploadDoneTaskToFirebase(idTask)
-				printTasksFromFirebase();
+				printQueriedTasksFromFirebase('isDone', false);
       })
     });
 }
@@ -244,7 +275,7 @@ onAuthStateChanged(auth, userCred => {
 		document.querySelector('.gmail').innerHTML = userCred.email;
 		updateTagsFromFirebase()
 		updateInfoFromFirebase()
-		printTasksFromFirebase()
+		printQueriedTasksFromFirebase('isDone', false);
 	} else {
 		window.sessionStorage.removeItem('UID')
 		window.location = "login.html";
@@ -271,3 +302,5 @@ function suggestTags(tags) {
 	tagSuggest.appendChild(newElement);
 	console.log(newElement);
 }
+
+export {printQueriedTasksFromFirebase, printTasksFromFirebase};

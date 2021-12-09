@@ -37,7 +37,6 @@ const auth = getAuth();
 createUserWithEmailAndPassword(auth, email, password)
   .then((userCredential) => {
     // sau khi đã đăng nhập được thì xử lý trong đây
-    const user = userCredential.user;
     createUserProfile(userCredential.user.uid)
       .then(() => {
         // in ra innerHTML bạn đã đăng nhập thành công
